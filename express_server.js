@@ -43,7 +43,7 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL]    // smth with shortURL as passer for DB
+  delete urlDatabase[req.params.shortURL]
   res.redirect('/urls')
 });
 
@@ -64,21 +64,9 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  // console.log(urlDatabase[shortURL])
-  console.log(req.params.shortURL)
-  console.log("I should be here")
   urlDatabase[req.params.shortURL] = req.body.longURL
-  res.redirect('/urls')       // should update /urls
-
-// const { shortURL } = req.params;
-// const 
-// if (longURL) {
-//   urlDatabase[req.params.shortURL] = longURL
-//   res.render('/urls')
+  res.redirect('/urls')
 })
-
-
-
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
