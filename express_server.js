@@ -37,6 +37,7 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   let randomKey = generateRandomString();
+  console.log("Im here")
   urlDatabase[randomKey] = req.body.longURL;
   res.redirect(`/urls/${randomKey}`);
 });
@@ -63,9 +64,21 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  urlDatabase[req.params.longURL] = req.params.shortURL
-  res.redirect('/urls')
-});
+  // console.log(urlDatabase[shortURL])
+  console.log(req.params.shortURL)
+  console.log("I should be here")
+  urlDatabase[req.params.shortURL] = req.body.longURL
+  res.redirect('/urls')       // should update /urls
+
+// const { shortURL } = req.params;
+// const 
+// if (longURL) {
+//   urlDatabase[req.params.shortURL] = longURL
+//   res.render('/urls')
+})
+
+
+
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");

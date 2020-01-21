@@ -17,7 +17,13 @@
       <div class="card-header"></div>  <!--  new div -->
       <div class="card-body">
         <h5 class="card-title dark">Edit: <%= longURL %></h5>
-        <p class="card-text">New URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a></p>
+        <form method="POST" action="/urls/<%= shortURL %>">
+          <div>
+            <label for="name">New URL:</label>
+            <input type="text" name="longURL" value="<%= longURL %>">
+            <input type="submit" value="Submit">
+          </div>
+        </form>
       </div>
     <div class="card-footer text-muted"></div>
   </div>
