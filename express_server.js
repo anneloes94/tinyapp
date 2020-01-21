@@ -40,8 +40,10 @@ app.get("/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);
-  res.send("Ok");
+  let randomKey = generateRandomString()
+  console.log(req)
+  urlDatabase[randomKey] = req.body.longURL
+  res.redirect(`/urls/${randomKey}`)
 
   // receive longURL -->
   //  generate random key
@@ -51,6 +53,11 @@ app.post("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
+});
+
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[shortURL]
+  res.redirect(longURL);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
