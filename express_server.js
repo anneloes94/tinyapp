@@ -36,37 +36,25 @@ app.get("/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  let randomKey = generateRandomString()
-  console.log(req.body.longURL)
-  urlDatabase[randomKey] = req.body.longURL
-  console.log(`/urls/${randomKey}`)
-  res.redirect(`/urls/${randomKey}`)           // passes /urls/3748gfeiu 
+  let randomKey = generateRandomString();
+  urlDatabase[randomKey] = req.body.longURL;
+  res.redirect(`/urls/${randomKey}`);
 });
 
-  // receive longURL -->
-  //  generate random key
-  // store in DB using ^^^ : longURL
-  // go to the shortUrl's page (/urls/jjkdjk)
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
-app.get("/u/:shortURL", (req, res) => {       //it must be going wrong here
+app.get("/u/:shortURL", (req, res) => {
   urlDatabase[req.params.shortURL]
   ? res.redirect(urlDatabase[req.params.shortURL])
   : res.send(404);
-
-  // res.redirect(longURL);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  // fakeObject = { "abcde123" : "http://nu.nl" } // will never complete (infinite loop?)
-  // let longURL = req.params.shortURL
   let templateVars = { shortURL: req.params.shortURL, longURL: req.params.longURL };
   res.render("urls_show", templateVars);
-  // let templateVars = { shortURL: req.params.shortURL, longURL: req.params.longURL };
-  // res.render("urls_show", templateVars);
 });
 
 app.get("/hello", (req, res) => {
