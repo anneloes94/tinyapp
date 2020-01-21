@@ -4,9 +4,11 @@ const PORT = 8080; // default port 8080
 
 function generateRandomString() {
   let randomKey = ""
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     for (let i = 1; i <= 6; i++) {
-      
+      randomKey += characters.charAt(Math.floor(Math.random() * characters.length))
     }
+    return randomKey;
 }
 
 app.set("view engine", "ejs");
