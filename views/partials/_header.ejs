@@ -11,17 +11,15 @@
     </div
 
     <% if(username){ %>     <!--IF LOGGED IN-->
-    <div class="collapse navbar-collapse ml-auto">
-      <ul class="navbar-nav">  
-        <div class="nav-item nav-link">                    <!--Username display-->
-          <input type="submit" value="Logged In As: <%= username %>">
+    <div class="collapse navbar-collapse ml-auto"> 
+        <div class="nav-item nav-link ml-auto">
+          <h6>Logged In As: <%= username %></h6>
         </div>
         <form class="form-inline rounded" method="POST" action="/logout">  <!--Logout form-->
           <div>  
             <input class="btn btn-outline-dark" type="submit" value="Logout">
           </div>
         </form>
-      </ul>
     </div>
         
     <% } else{ %>           <!--ELSE SHOW LOGIN-->
