@@ -2,7 +2,32 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require("cookie-parser");
+const bodyParser = require("body-parser");
 
+app.set("view engine", "ejs");
+app.use(cookieParser());
+app.use(bodyParser.urlencoded({extended: true}));
+
+// DATA STORE
+const urlDatabase = {
+  "b2xVn2": "http://www.lighthouselabs.ca",
+  "9sm5xK": "http://www.google.com"
+};
+
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+
+// FUNCTIONS
 function generateRandomString() {
   let randomKey = ""
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -10,20 +35,18 @@ function generateRandomString() {
       randomKey += characters.charAt(Math.floor(Math.random() * characters.length))
     }
     return randomKey;
-}
-
-app.set("view engine", "ejs");
-app.use(cookieParser());
-
-const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({extended: true}));
-
-
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
 };
 
+function isEmailPresent(passedEmail) {
+  for (let user in users) {
+    if (users[user].email === passedEmail) {
+      return true;
+    }
+    return false;
+  }
+};
+
+// ROUTES
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -34,6 +57,37 @@ app.post("/login", (req, res) => {
   let templateVars = {
     username: req.cookies["username"]
   };
+})
+
+app.get("/register", (req, res) => {
+  let templateVars = { 
+    urls: urlDatabase,
+    username: req.cookies["username"]
+   };
+   res.render("registration_page", templateVars)
+})
+
+app.post("/register", (req, res) => {
+  const userID = generateRandomString();
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if (isEmailPresent(email)) {
+    res.status(400);
+    res.send("You already have an account, you idiot.")
+  } else if (email === "" || password === "") {
+    res.status(400);
+    res.send("Email and/or password cannot be an empty string.")
+  } else {
+    users[userID] = {
+        userID,
+        email,
+        password
+    }
+    console.log(users)
+    console.log("\n")
+    res.cookie('user_ID', userID )
+    res.redirect("/urls")}
 })
 
 app.post("/logout", (req, res) => {
