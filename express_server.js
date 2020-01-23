@@ -10,8 +10,8 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 // DATA STORE
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": { longURL : "http://www.lighthouselabs.ca", userID: "userRandomID"},
+  "9sm5xK": { longURL : "http://www.google.com", userID: "user2RandomID"}
 };
 
 const users = { 
@@ -21,11 +21,12 @@ const users = {
     password: "purple-monkey-dinosaur"
   },
  "user2RandomID": {
-    id: "user2RandomID", 
+    id: "user2RandomID",
     email: "user2@example.com", 
     password: "dishwasher-funk"
   }
 }
+
 
 // FUNCTIONS
 function generateRandomString() {
@@ -45,11 +46,17 @@ function existingUserByEmail(passedEmail) {
   }
 };
 
-// function getUserByValue(object, value) {
-//   return Object.keys(object).find(function(key) {
-//     object[key] === value
-//   })
-// }
+// filter shortURLs by userID
+// returns object of shortURL:longURL
+function filterByUserID(urlDatabase, user_ID) {
+  const URLZZ = {};
+  for (let shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === user_ID) {
+      URLZZ[shortURL] = urlDatabase[shortURL].longURL
+    }
+  }
+  return URLZZ;
+}
 
 // ROUTES
 app.get("/", (req, res) => {
@@ -123,10 +130,16 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { 
-    urls: urlDatabase,
-    user: users[req.cookies.user_ID]
+  let templateVars = {
+    user: users[req.cookies.user_ID],
+    links: filterByUserID(urlDatabase, req.cookies.user_ID)
    };
+
+  console.log(templateVars);  
+  if (!templateVars.user) {
+    res.status(403)
+    res.send("403: Please register or log in first")
+  }
   res.render("urls_index", templateVars);
 });
 
@@ -146,8 +159,12 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.get("/urls/new", (req, res) => {
   let templateVars = {
     user: users[req.cookies.user_ID]
+  } 
+  if (!templateVars.user) {
+    res.redirect("/login")
+  } else {
+    res.render("urls_new", templateVars);
   }
-  res.render("urls_new", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
@@ -160,9 +177,31 @@ app.get("/urls/:shortURL", (req, res) => {
   let templateVars = { 
     shortURL: req.params.shortURL, 
     longURL: req.params.longURL,
-    user: users[req.cookies.user_ID]
+    user: users[req.cookies.user_ID],
+    links: filterByUserID(urlDatabase, req.cookies.user_ID)
    };
-  res.render("urls_show", templateVars);
+
+   // returns true if passed shortURL is in links
+  function isInLinks(shortU) {
+    for (let key in Object.keys(templateVars.links)) {
+      if (key === shortU) {
+        return true
+      }
+    }
+    return false
+  }
+
+  console.log(`Req.params: ${req.params.shortURL}`)
+
+  if (!templateVars.user) {
+    res.status(403)
+    res.send("403: Please register or log in first")
+  } else if (!isInLinks(req.params.shortURL)) {
+    res.status(403)
+    res.send("403: Unauthorized to view this shortURL")
+  } else {
+    res.render("urls_show", templateVars);
+  }
 });
 
 app.post("/urls/:shortURL", (req, res) => {
