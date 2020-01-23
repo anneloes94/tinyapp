@@ -8,7 +8,7 @@ app.set("view engine", "ejs");
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
 
-// DATA STORE
+// DATA STORE //
 const urlDatabase = {
   "b2xVn2": { longURL : "http://www.lighthouselabs.ca", userID: "userRandomID"},
   "9sm5xK": { longURL : "http://www.google.com", userID: "user2RandomID"}
@@ -28,7 +28,7 @@ const users = {
 }
 
 
-// FUNCTIONS
+// FUNCTIONS //
 function generateRandomString() {
   let randomKey = ""
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -60,7 +60,7 @@ function filterByUserID(urlDatabase, user_ID) {
 
  // returns true if passed shortURL is in links
  function isInLinks(shortU, links) {
-  for (let key in links) {
+  for (let key of links) {
     if (key === shortU) {
       return true
     }
@@ -68,17 +68,17 @@ function filterByUserID(urlDatabase, user_ID) {
   return false
 }
 
-// ROUTES
+// ROUTES //
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
+
+///             /login
 
 app.post("/login", (req, res) => {
   const currentEmail = req.body.email;
   const currentPassword = req.body.password;
   const user = existingUserByEmail(currentEmail);
-  console.log(req.body)
-  console.log(currentEmail)
 
   if (users[user] === undefined) {
     res.status(400);
@@ -98,6 +98,8 @@ app.get("/login", (req, res) => {
   };
   res.render("login", templateVars)
 })
+
+////              /register
 
 app.get("/register", (req, res) => {
   let templateVars = { 
@@ -124,20 +126,19 @@ app.post("/register", (req, res) => {
         email,
         password
     }
-    console.log(users)
-    console.log("\n")
+
     res.cookie('user_ID', userID )
     res.redirect("/urls")}
 })
+
+////                /logout
 
 app.post("/logout", (req, res) => {
   res.clearCookie("user_ID");
   res.redirect("/urls");
 })
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
+////                /urls
 
 app.get("/urls", (req, res) => {
   let templateVars = {
@@ -145,7 +146,6 @@ app.get("/urls", (req, res) => {
     links: filterByUserID(urlDatabase, req.cookies.user_ID)
    };
 
-  console.log(templateVars);  
   if (!templateVars.user) {
     res.status(403)
     res.send("403: Please register or log in first")
@@ -155,16 +155,31 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   let randomKey = generateRandomString();
-  console.log("Im here")
-  urlDatabase[randomKey] = req.body.longURL;
+  let userID = req.cookies.user_ID
+  urlDatabase[randomKey] = {
+    longURL : req.body.longURL, 
+    userID : userID 
+  }
   res.redirect(`/urls/${randomKey}`);
 });
 
+////           /urls/:shortURL/delete
+
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL]
-  res.redirect('/urls')
+  shortURL = req.params.shortURL
+  links = filterByUserID(urlDatabase, req.cookies.user_ID);
+
+  if (!isInLinks(shortURL, Object.keys(links))) {
+    res.status(403)
+    res.send("403: Unauthorized to view this shortURL")
+
+  } else {
+    delete urlDatabase[req.params.shortURL]
+    res.redirect('/urls')
+  }
 });
 
+////                /urls/new
 
 app.get("/urls/new", (req, res) => {
   let templateVars = {
@@ -177,11 +192,15 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
+////                /u/:shortURL
+
 app.get("/u/:shortURL", (req, res) => {
   urlDatabase[req.params.shortURL]
   ? res.redirect(urlDatabase[req.params.shortURL])
   : res.send(404);
 });
+
+////                /urls/:shortURL
 
 app.get("/urls/:shortURL", (req, res) => {
   let templateVars = { 
@@ -189,20 +208,16 @@ app.get("/urls/:shortURL", (req, res) => {
     longURL: req.params.longURL,
     user: users[req.cookies.user_ID],
     links: filterByUserID(urlDatabase, req.cookies.user_ID)
-   };
-
-   console.log(Object.keys(templateVars.links))
-   console.log(req.params.shortURL)
-
-  console.log(`Req.params: ${req.params.shortURL}`)
-  console.log(!isInLinks(req.params.shortURL, Object.keys(templateVars.links)))
+  };
 
   if (!templateVars.user) {
     res.status(403)
     res.send("403: Please register or log in first")
+
   } else if (!isInLinks(req.params.shortURL, Object.keys(templateVars.links))) {
     res.status(403)
-    res.send("403: Unauthorized to view this shortURL")
+    res.send("403: Unauthorized to view this shortURL 2")
+
   } else {
     res.render("urls_show", templateVars);
   }
@@ -210,24 +225,32 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.post("/urls/:shortURL", (req, res) => {
   shortURL = req.params.shortURL
-  longURL = req.params.longURL
   user = users[req.cookies.user_ID]
   links = filterByUserID(urlDatabase, req.cookies.user_ID)
-  console.log(!isInLinks(shortURL, Object.keys(links)))
   
   if (!user) {
     res.status(403)
     res.send("403: Please register or log in first")
+
   } else if (!isInLinks(shortURL, Object.keys(links))) {
+    console.log("boom")
     res.status(403)
-    res.send("403: Unauthorized to view this shortURL")
+    res.send("403: Unauthorized to view this shortURL 3")
+
+  } else {
+    urlDatabase[shortURL] = req.body.longURL
+    res.redirect('/urls')
   }
-  urlDatabase[shortURL] = req.body.longURL
-  res.redirect('/urls')
 })
+
+////                  other
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
+});
+
+app.get("/urls.json", (req, res) => {
+  res.json(urlDatabase);
 });
 
 app.listen(PORT, () => {
