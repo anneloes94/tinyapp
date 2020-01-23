@@ -60,8 +60,10 @@ app.post("/login", (req, res) => {
   const currentEmail = req.body.email;
   const currentPassword = req.body.password;
   const user = existingUserByEmail(currentEmail);
+  console.log(req.body)
+  console.log(currentEmail)
 
-  if (user === undefined) {
+  if (users[user] === undefined) {
     res.status(400);
     res.send('400: You are not a registered user, you fool.');
   } else if (currentPassword !== users[user].password) {
