@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
+const bcrypt = require("bcrypt");
 
 app.set("view engine", "ejs");
 app.use(cookieParser());
@@ -79,16 +80,15 @@ app.post("/login", (req, res) => {
   const currentEmail = req.body.email;
   const currentPassword = req.body.password;
   const user = existingUserByEmail(currentEmail);
-
+  
   if (users[user] === undefined) {
     res.status(400);
     res.send('400: You are not a registered user, you fool.');
-  } else if (currentPassword !== users[user].password) {
-    res.status(403);
-    res.send("403: That is not your password, use your brain!")
-  } else {
-    res.cookie("user_ID", users[user].id)
+  } else if (bcrypt.compareSync(currentPassword, users[user].hashedPassword)) {
+    res.cookie("user_ID", users[user].userID)
     res.redirect("/urls")
+  } else {
+    res.redirect("/login")
   }
 })
 
@@ -112,19 +112,21 @@ app.get("/register", (req, res) => {
 app.post("/register", (req, res) => {
   const userID = generateRandomString();
   const email = req.body.email;
-  const password = req.body.password;
+  const currentPassword = req.body.password;
+  const hashedPassword = bcrypt.hashSync(currentPassword, 10)
+
 
   if (existingUserByEmail(email)) {
     res.status(400);
-    res.send("You already have an account, you idiot.")
-  } else if (email === "" || password === "") {
+    res.send("You already have an account, you pancake.")
+  } else if (email === "" || currentPassword === "") {
     res.status(400);
     res.send("Email and/or password cannot be an empty string.")
   } else {
     users[userID] = {
         userID,
         email,
-        password
+        hashedPassword
     }
 
     res.cookie('user_ID', userID )
@@ -135,7 +137,7 @@ app.post("/register", (req, res) => {
 
 app.post("/logout", (req, res) => {
   res.clearCookie("user_ID");
-  res.redirect("/urls");
+  res.redirect("/login");
 })
 
 ////                /urls
@@ -174,7 +176,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
     res.send("403: Unauthorized to view this shortURL")
 
   } else {
-    delete urlDatabase[req.params.shortURL]
+    delete urlDatabase[shortURL]
     res.redirect('/urls')
   }
 });
@@ -195,8 +197,9 @@ app.get("/urls/new", (req, res) => {
 ////                /u/:shortURL
 
 app.get("/u/:shortURL", (req, res) => {
-  urlDatabase[req.params.shortURL]
-  ? res.redirect(urlDatabase[req.params.shortURL])
+  shortURL = req.params.shortURL
+  urlDatabase[shortURL]
+  ? res.redirect(urlDatabase[shortURL].longURL)
   : res.send(404);
 });
 
@@ -233,7 +236,6 @@ app.post("/urls/:shortURL", (req, res) => {
     res.send("403: Please register or log in first")
 
   } else if (!isInLinks(shortURL, Object.keys(links))) {
-    console.log("boom")
     res.status(403)
     res.send("403: Unauthorized to view this shortURL 3")
 
