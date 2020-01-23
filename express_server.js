@@ -58,6 +58,16 @@ function filterByUserID(urlDatabase, user_ID) {
   return URLZZ;
 }
 
+ // returns true if passed shortURL is in links
+ function isInLinks(shortU, links) {
+  for (let key in links) {
+    if (key === shortU) {
+      return true
+    }
+  }
+  return false
+}
+
 // ROUTES
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -181,22 +191,16 @@ app.get("/urls/:shortURL", (req, res) => {
     links: filterByUserID(urlDatabase, req.cookies.user_ID)
    };
 
-   // returns true if passed shortURL is in links
-  function isInLinks(shortU) {
-    for (let key in Object.keys(templateVars.links)) {
-      if (key === shortU) {
-        return true
-      }
-    }
-    return false
-  }
+   console.log(Object.keys(templateVars.links))
+   console.log(req.params.shortURL)
 
   console.log(`Req.params: ${req.params.shortURL}`)
+  console.log(!isInLinks(req.params.shortURL, Object.keys(templateVars.links)))
 
   if (!templateVars.user) {
     res.status(403)
     res.send("403: Please register or log in first")
-  } else if (!isInLinks(req.params.shortURL)) {
+  } else if (!isInLinks(req.params.shortURL, Object.keys(templateVars.links))) {
     res.status(403)
     res.send("403: Unauthorized to view this shortURL")
   } else {
@@ -205,7 +209,20 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  urlDatabase[req.params.shortURL] = req.body.longURL
+  shortURL = req.params.shortURL
+  longURL = req.params.longURL
+  user = users[req.cookies.user_ID]
+  links = filterByUserID(urlDatabase, req.cookies.user_ID)
+  console.log(!isInLinks(shortURL, Object.keys(links)))
+  
+  if (!user) {
+    res.status(403)
+    res.send("403: Please register or log in first")
+  } else if (!isInLinks(shortURL, Object.keys(links))) {
+    res.status(403)
+    res.send("403: Unauthorized to view this shortURL")
+  }
+  urlDatabase[shortURL] = req.body.longURL
   res.redirect('/urls')
 })
 
