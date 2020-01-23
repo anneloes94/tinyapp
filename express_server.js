@@ -42,9 +42,9 @@ function generateRandomString() {
     return randomKey;
 };
 
-function existingUserByEmail(passedEmail) {
+function getUserByEmail(email, database) {
   for (let user in users) {
-    if (users[user].email === passedEmail) {
+    if (database[user].email === email) {
       return user;
     }
   }
@@ -82,7 +82,7 @@ app.get("/", (req, res) => {
 app.post("/login", (req, res) => {
   const currentEmail = req.body.email;
   const currentPassword = req.body.password;
-  const user = existingUserByEmail(currentEmail);
+  const user = getUserByEmail(currentEmail, urlDatabase);
 
   if (users[user] === undefined) {
     res.status(400);
@@ -122,7 +122,7 @@ app.post("/register", (req, res) => {
   const hashedPassword = bcrypt.hashSync(currentPassword, 10)
 
 
-  if (existingUserByEmail(email)) {
+  if (getUserByEmail(email, urlDatabase)) {
     res.status(400);
     res.send("You already have an account, you pancake.")
   } else if (email === "" || currentPassword === "") {
