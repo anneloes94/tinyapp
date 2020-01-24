@@ -69,6 +69,13 @@ function filterByUserID(urlDatabase, user_ID) {
 
 // ROUTES //
 app.get("/", (req, res) => {
+  let user = users[req.session.user_id]
+
+  if (user) {
+    res.redirect("/urls")
+  } else {
+    res.redirect("/login")
+  }
   res.send("Hello!");
 });
 
@@ -234,7 +241,7 @@ app.post("/urls/:shortURL", (req, res) => {
   // user = users[req.cookies.user_ID]
   const user = users[req.session.user_id]
   // links = filterByUserID(urlDatabase, req.cookies.user_ID)
-  const links = filterByUserID(urlDatabase, req.session.user_id)
+  const linrlss = filterByUserID(urlDatabase, req.session.user_id)
   
   if (!user) {
     res.status(403)
