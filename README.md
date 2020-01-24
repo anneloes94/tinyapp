@@ -6,8 +6,8 @@ TinyApp allows users to make new shortened URLs, see an overview of their create
 
 ## Final Product
 
-!["screenshot description"](#)
-!["screenshot description"](#)
+!["Screenshot of My URLs page"](https://raw.githubusercontent.com/anneloes94/tinyapp/master/docs/TinyApp_MyURLs.png)
+!["Screenshot of Viewing/editing page of shortened URL"](https://raw.githubusercontent.com/anneloes94/tinyapp/master/docs/TinyApp_URLview.png)
 
 ## Dependencies
 
