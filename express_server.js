@@ -4,6 +4,7 @@ const PORT = 8080; // default port 8080
 const cookieSession = require("cookie-session");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
+const { getUserByEmail } = require("./helpers")
 
 app.set("view engine", "ejs");
 app.use(cookieSession({
@@ -22,12 +23,12 @@ const users = {
   "userRandomID": {
     id: "userRandomID", 
     email: "user@example.com", 
-    hashedPassword: "purple-monkey-dinosaur"
+    hashedPassword: bcrypt.hashSync("purple-monkey-dinosaur", 10)
   },
  "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com", 
-    hashedPassword: "dishwasher-funk"
+    hashedPassword: bcrypt.hashSync("dishwasher-funk", 10)
   }
 }
 
@@ -42,13 +43,7 @@ function generateRandomString() {
     return randomKey;
 };
 
-function getUserByEmail(email, database) {
-  for (let user in users) {
-    if (database[user].email === email) {
-      return user;
-    }
-  }
-};
+
 
 // filter shortURLs by userID
 // returns object of shortURL:longURL
@@ -82,15 +77,13 @@ app.get("/", (req, res) => {
 app.post("/login", (req, res) => {
   const currentEmail = req.body.email;
   const currentPassword = req.body.password;
-  const user = getUserByEmail(currentEmail, urlDatabase);
+  const user = getUserByEmail(currentEmail, users);
 
   if (users[user] === undefined) {
-    res.status(400);
     res.send('400: You are not a registered user, you potato.');
+    res.status(400);
   } else if (bcrypt.compareSync(currentPassword, users[user].hashedPassword)) {
-    // res.cookie("user_ID", users[user].userID)
     req.session.user_id = users[user].userID;
-    console.log("User ID: " + req.session.user_id)
     res.redirect("/urls")
   } else {
     res.redirect("/login")
@@ -99,7 +92,6 @@ app.post("/login", (req, res) => {
 
 app.get("/login", (req, res) => {
   let templateVars = {
-    // user: users[req.cookies.user_ID]
     user : users[req.session.user_id]
   };
   res.render("login", templateVars)
@@ -122,7 +114,7 @@ app.post("/register", (req, res) => {
   const hashedPassword = bcrypt.hashSync(currentPassword, 10)
 
 
-  if (getUserByEmail(email, urlDatabase)) {
+  if (getUserByEmail(email, users)) {
     res.status(400);
     res.send("You already have an account, you pancake.")
   } else if (email === "" || currentPassword === "") {
@@ -135,15 +127,14 @@ app.post("/register", (req, res) => {
         hashedPassword
     }
 
-    // res.cookie('user_ID', userID )
     req.session.user_id = userID
-    res.redirect("/urls")}
+    res.redirect("/urls")
+  }
 })
 
 ////                /logout
 
 app.post("/logout", (req, res) => {
-  // res.clearCookie("user_ID");
   res.clearCookie("session")
   res.clearCookie("session.sig")
   res.redirect("/login");
@@ -153,11 +144,9 @@ app.post("/logout", (req, res) => {
 
 app.get("/urls", (req, res) => {
   let templateVars = {
-    // user: users[req.cookies.user_ID],
     user: users[req.session.user_id],
     links: filterByUserID(urlDatabase, req.session.user_id)
-    // links: filterByUserID(urlDatabase, req.cookies.user_ID)
-   };
+  };
 
   if (!templateVars.user) {
     res.status(403)
@@ -168,7 +157,6 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   let randomKey = generateRandomString();
-  // let userID = req.cookies.user_ID
   urlDatabase[randomKey] = {                // BUG : when editing existing shortURL, it gets removed
     longURL : req.body.longURL, 
     userID : req.session.user_id 
@@ -242,11 +230,11 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  shortURL = req.params.shortURL
+  const shortURL = req.params.shortURL
   // user = users[req.cookies.user_ID]
-  user = users[req.session.user_id]
+  const user = users[req.session.user_id]
   // links = filterByUserID(urlDatabase, req.cookies.user_ID)
-  links = filterByUserID(urlDatabase, req.session.user_id)
+  const links = filterByUserID(urlDatabase, req.session.user_id)
   
   if (!user) {
     res.status(403)
@@ -257,7 +245,8 @@ app.post("/urls/:shortURL", (req, res) => {
     res.send("403: Unauthorized to view this shortURL 3")
 
   } else {
-    urlDatabase[shortURL] = req.body.longURL
+    urlDatabase[shortURL] = { longURL : req.body.longURL, userID : user.userID }
+    console.log(urlDatabase)
     res.redirect('/urls')
   }
 })
