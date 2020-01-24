@@ -4,7 +4,7 @@ const PORT = 8080; // default port 8080
 const cookieSession = require("cookie-session");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
-const { getUserByEmail } = require("./helpers")
+const { getUserByEmail, filterByUserID } = require("./helpers");
 
 app.set("view engine", "ejs");
 app.use(cookieSession({
@@ -19,62 +19,52 @@ const urlDatabase = {
   "9sm5xK": { longURL : "http://www.google.com", userID: "user2RandomID"}
 };
 
-const users = { 
+const users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     hashedPassword: bcrypt.hashSync("purple-monkey-dinosaur", 10)
   },
- "user2RandomID": {
+  "user2RandomID": {
     id: "user2RandomID",
-    email: "user2@example.com", 
+    email: "user2@example.com",
     hashedPassword: bcrypt.hashSync("dishwasher-funk", 10)
   }
-}
+};
 
 
 // FUNCTIONS //
-function generateRandomString() {
-  let randomKey = ""
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    for (let i = 1; i <= 6; i++) {
-      randomKey += characters.charAt(Math.floor(Math.random() * characters.length))
-    }
-    return randomKey;
+const generateRandomString = () => {
+  let randomKey = "";
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 1; i <= 6; i++) {
+    randomKey += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return randomKey;
 };
 
 
 
-// filter shortURLs by userID
-// returns object of shortURL:longURL
-function filterByUserID(urlDatabase, user_ID) {
-  const URLZZ = {};
-  for (let shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === user_ID) {
-      URLZZ[shortURL] = urlDatabase[shortURL].longURL
-    }
-  }
-  return URLZZ;
-}
 
- // returns true if passed shortURL is in links
- function isInLinks(shortU, links) {
+
+// returns true if passed shortURL is in links
+const isInLinks = (shortU, links) => {
   for (let key of links) {
     if (key === shortU) {
-      return true
+      return true;
     }
   }
-  return false
-}
+  return false;
+};
 
 // ROUTES //
 app.get("/", (req, res) => {
-  let user = users[req.session.user_id]
+  let user = users[req.session.user_id];
 
   if (user) {
-    res.redirect("/urls")
+    res.redirect("/urls");
   } else {
-    res.redirect("/login")
+    res.redirect("/login");
   }
   res.send("Hello!");
 });
@@ -91,61 +81,61 @@ app.post("/login", (req, res) => {
     res.status(400);
   } else if (bcrypt.compareSync(currentPassword, users[user].hashedPassword)) {
     req.session.user_id = users[user].userID;
-    res.redirect("/urls")
+    res.redirect("/urls");
   } else {
-    res.redirect("/login")
+    res.redirect("/login");
   }
-})
+});
 
 app.get("/login", (req, res) => {
   let templateVars = {
     user : users[req.session.user_id]
   };
-  res.render("login", templateVars)
-})
+  res.render("login", templateVars);
+});
 
 ////              /register
 
 app.get("/register", (req, res) => {
-  let templateVars = { 
+  let templateVars = {
     urls: urlDatabase,
     user: null
-   };
-   res.render("registration_page", templateVars)
-})
+  };
+  res.render("registration_page", templateVars);
+});
 
 app.post("/register", (req, res) => {
   const userID = generateRandomString();
   const email = req.body.email;
   const currentPassword = req.body.password;
-  const hashedPassword = bcrypt.hashSync(currentPassword, 10)
+  const hashedPassword = bcrypt.hashSync(currentPassword, 10);
 
 
   if (getUserByEmail(email, users)) {
     res.status(400);
-    res.send("You already have an account, you pancake.")
+    res.send("You already have an account, you pancake.");
   } else if (email === "" || currentPassword === "") {
     res.status(400);
-    res.send("Email and/or password cannot be an empty string.")
+    res.send("Email and/or password cannot be an empty string.");
   } else {
     users[userID] = {
-        userID,
-        email,
-        hashedPassword
-    }
+      userID,
+      email,
+      hashedPassword
+    };
 
-    req.session.user_id = userID
-    res.redirect("/urls")
+    req.session.user_id = userID;
+    res.redirect("/urls");
   }
-})
+});
 
 ////                /logout
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("session")
-  res.clearCookie("session.sig")
+  res.clearCookie("session");
+  res.clearCookie("session.sig");
   res.redirect("/login");
-})
+});
 
 ////                /urls
 
@@ -156,8 +146,8 @@ app.get("/urls", (req, res) => {
   };
 
   if (!templateVars.user) {
-    res.status(403)
-    res.send("403: Please register or log in first")
+    res.status(403);
+    res.send("403: Please register or log in first");
   }
   res.render("urls_index", templateVars);
 });
@@ -165,26 +155,26 @@ app.get("/urls", (req, res) => {
 app.post("/urls", (req, res) => {
   let randomKey = generateRandomString();
   urlDatabase[randomKey] = {                // BUG : when editing existing shortURL, it gets removed
-    longURL : req.body.longURL, 
-    userID : req.session.user_id 
-  }
+    longURL : req.body.longURL,
+    userID : req.session.user_id
+  };
   res.redirect(`/urls/${randomKey}`);
 });
 
 ////           /urls/:shortURL/delete
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  shortURL = req.params.shortURL
+  const shortURL = req.params.shortURL;
   // links = filterByUserID(urlDatabase, req.cookies.user_ID);
-  links = filterByUserID(urlDatabase, req.session.user_id);
+  const links = filterByUserID(urlDatabase, req.session.user_id);
 
   if (!isInLinks(shortURL, Object.keys(links))) {
-    res.status(403)
-    res.send("403: Unauthorized to view this shortURL")
+    res.status(403);
+    res.send("403: Unauthorized to view this shortURL");
 
   } else {
-    delete urlDatabase[shortURL]
-    res.redirect('/urls')
+    delete urlDatabase[shortURL];
+    res.redirect('/urls');
   }
 });
 
@@ -194,9 +184,9 @@ app.get("/urls/new", (req, res) => {
   let templateVars = {
     // user: users[req.cookies.user_ID]
     user: users[req.session.user_id]
-  } 
+  };
   if (!templateVars.user) {
-    res.redirect("/login")
+    res.redirect("/login");
   } else {
     res.render("urls_new", templateVars);
   }
@@ -205,18 +195,18 @@ app.get("/urls/new", (req, res) => {
 ////                /u/:shortURL
 
 app.get("/u/:shortURL", (req, res) => {
-  shortURL = req.params.shortURL
+  shortURL = req.params.shortURL;
   urlDatabase[shortURL]
-  ? res.redirect(urlDatabase[shortURL].longURL)
-  : res.send(404);
+    ? res.redirect(urlDatabase[shortURL].longURL)
+    : res.send(404);
 });
 
 ////                /urls/:shortURL
 
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { 
-    shortURL: req.params.shortURL, 
-    longURL: req.params.longURL,
+  let templateVars = {
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL] && urlDatabase[req.params.shortURL].longURL,
     // user: users[req.cookies.user_ID],
     user: users[req.session.user_id],
     links: filterByUserID(urlDatabase, req.session.user_id)
@@ -224,12 +214,16 @@ app.get("/urls/:shortURL", (req, res) => {
   };
 
   if (!templateVars.user) {
-    res.status(403)
-    res.send("403: Please register or log in first")
+    res.status(403);
+    res.send("403: Please register or log in first");
 
   } else if (!isInLinks(req.params.shortURL, Object.keys(templateVars.links))) {
-    res.status(403)
-    res.send("403: Unauthorized to view this shortURL 2")
+    res.status(403);
+    res.send("403: Unauthorized to view this shortURL");
+
+  } else if (!templateVars.longURL) {
+    res.status(404);
+    res.send("404: URL does not exist");
 
   } else {
     res.render("urls_show", templateVars);
@@ -237,26 +231,26 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  const shortURL = req.params.shortURL
+  const shortURL = req.params.shortURL;
   // user = users[req.cookies.user_ID]
-  const user = users[req.session.user_id]
+  const user = users[req.session.user_id];
   // links = filterByUserID(urlDatabase, req.cookies.user_ID)
-  const linrlss = filterByUserID(urlDatabase, req.session.user_id)
+  const links = filterByUserID(urlDatabase, req.session.user_id);
   
   if (!user) {
-    res.status(403)
-    res.send("403: Please register or log in first")
+    res.status(403);
+    res.send("403: Please register or log in first");
 
   } else if (!isInLinks(shortURL, Object.keys(links))) {
-    res.status(403)
-    res.send("403: Unauthorized to view this shortURL 3")
+    res.status(403);
+    res.send("403: Unauthorized to view this shortURL");
 
   } else {
-    urlDatabase[shortURL] = { longURL : req.body.longURL, userID : user.userID }
-    console.log(urlDatabase)
-    res.redirect('/urls')
+    urlDatabase[shortURL] = { longURL : req.body.longURL, userID : user.userID };
+    console.log(urlDatabase);
+    res.redirect('/urls');
   }
-})
+});
 
 ////                  other
 
