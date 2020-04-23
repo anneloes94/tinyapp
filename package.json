@@ -12,6 +12,9 @@
     "morgan": "^1.9.1",
     "nodemon": "^2.0.2"
   },
+  "engines": {
+    "node": "10.16.x"
+  },
   "devDependencies": {
     "chai": "^4.2.0",
     "mocha": "^7.0.0"
